@@ -69,7 +69,7 @@ public class ItemServiceImpl implements ItemService {
         return itemRepository.searchItems(text).stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
 
-    public void validateAddItem(Item item) {
+    private void validateAddItem(Item item) {
         if (item == null) {
             log.warn("Получен null");
             throw new ValidationException("Передан null объект");
@@ -81,7 +81,7 @@ public class ItemServiceImpl implements ItemService {
 
     }
 
-    public void validateUpdateItem(Long userId, Long itemId, Item item) {
+    private void validateUpdateItem(Long userId, Long itemId, Item item) {
         if (item == null) {
             log.warn("Получен null");
             throw new ValidationException("Передан null объект");
@@ -100,7 +100,7 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    public Item validateIfNotExist(Long itemId) {
+    private Item validateIfNotExist(Long itemId) {
         Item savedItem = itemRepository.getById(itemId);
         if (savedItem == null) {
             log.warn("Вещь с id={} не существует", itemId);
