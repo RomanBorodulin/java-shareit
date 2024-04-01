@@ -8,8 +8,9 @@ import ru.practicum.shareit.exception.DataNotFoundException;
 import ru.practicum.shareit.exception.DuplicateEmailException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.user.repository.JpaUserRepository;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,23 +18,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class UserValidator {
-    private final UserRepository userRepository;
+    private final JpaUserRepository userRepository;
 
     public void validateAddUser(User user) {
         if (user == null) {
             log.warn("Получен null");
             throw new ValidationException("Передан null объект");
         }
-        validateUniqueEmail(user);
     }
 
     public User validateIfNotExist(Long userId) {
-        User user = userRepository.getById(userId);
-        if (user == null) {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
             log.warn("Пользователь с id={} не существует", userId);
             throw new DataNotFoundException("Пользователь с указанным id=" + userId + " не был добавлен ранее");
         }
-        return user;
+        return user.get();
     }
 
     public void validateUpdateUser(Long userId, User user) {
@@ -55,20 +55,10 @@ public class UserValidator {
         }
     }
 
-    private void validateUniqueEmail(User user) {
-        Set<String> emails = userRepository.getAllUsers().stream().map(User::getEmail).collect(Collectors.toSet());
-        if (emails.contains(user.getEmail())) {
-            log.warn("Пользователь с таким email {} уже существует", user.getEmail());
-            throw new DuplicateEmailException("Пользователь с таким email уже существует");
-        }
-    }
-
     private void validateUniqueEmail(Long userId, User user) {
-        Set<String> emails = userRepository.getAllUsers().stream().map(User::getEmail).collect(Collectors.toSet());
-        User savedUser = userRepository.getById(userId);
-        if (savedUser != null) {
-            emails.remove(savedUser.getEmail());
-        }
+        Set<String> emails = userRepository.findAll().stream().map(User::getEmail).collect(Collectors.toSet());
+        Optional<User> savedUser = userRepository.findById(userId);
+        savedUser.ifPresent(value -> emails.remove(value.getEmail()));
         if (emails.contains(user.getEmail())) {
             log.warn("Пользователь с таким email {} уже существует", user.getEmail());
             throw new DuplicateEmailException("Пользователь с таким email уже существует");
