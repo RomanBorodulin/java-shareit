@@ -46,3 +46,8 @@ CREATE TABLE IF NOT EXISTS comments (
     CONSTRAINT fk_comments_to_items FOREIGN KEY (item_id) REFERENCES items (id),
     CONSTRAINT fk_comments_to_users FOREIGN KEY (author_id) REFERENCES users (id)
 );
+
+CREATE INDEX idx_item_id ON comments(item_id);
+CREATE INDEX idx_owner_id ON items(owner_id);
+CREATE INDEX idx_booker_id ON bookings(booker_id);
+CREATE INDEX idx_item_owner_id ON bookings(item_id);
