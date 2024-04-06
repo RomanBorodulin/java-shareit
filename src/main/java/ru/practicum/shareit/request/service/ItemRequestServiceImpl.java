@@ -1,13 +1,11 @@
 package ru.practicum.shareit.request.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.DataNotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.repository.JpaItemRepository;
@@ -17,6 +15,7 @@ import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.JpaItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.JpaUserRepository;
+import ru.practicum.shareit.utility.PageUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -55,19 +54,12 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     @Override
     public List<ItemRequestDto> findAll(Long userId, int from, int size) {
         User user = validateIfUserNotExist(userId);
-        if (from < 0) {
-            throw new ValidationException("Введен отрицательный индекс первого элемента");
-        }
-        if (size <= 0) {
-            throw new ValidationException("Количество элементов для отображения не может быть меньше или равно нулю");
-        }
-        Pageable pageable = PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "created"));
+        Pageable pageable = PageUtils.getPageable(from, size, Sort.by(Sort.Direction.DESC, "created"));
         List<ItemRequest> requests = requestRepository.findAllByRequestorNot(user, pageable);
         List<ItemRequestDto> requestDtos = ItemRequestMapper.toItemRequestDtoList(requests);
         List<ItemDto> items = ItemMapper.toItemDtoList(itemRepository.findAllByRequestInOrderByIdAsc(requests));
         return getItemRequestDtosWithItems(requestDtos, items);
     }
-
 
     @Override
     public ItemRequestDto findById(Long userId, Long id) {

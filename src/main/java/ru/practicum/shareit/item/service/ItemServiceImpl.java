@@ -2,7 +2,6 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,7 @@ import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.JpaItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.JpaUserRepository;
+import ru.practicum.shareit.utility.PageUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -96,7 +96,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemWithBookingDto> getAllItems(Long userId, int from, int size) {
         validateIfUserNotExist(userId);
-        Pageable pageable = getPageable(from, size);
+        Pageable pageable = PageUtils.getPageable(from, size);
         List<Item> items = itemRepository.findAllByOwnerId(userId, pageable);
         if (items.isEmpty()) {
             throw new DataNotFoundException("Пользователь не является владельцем");
@@ -109,19 +109,9 @@ public class ItemServiceImpl implements ItemService {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
-        Pageable pageable = getPageable(from, size);
+        Pageable pageable = PageUtils.getPageable(from, size);
         return itemRepository.searchItems(text, pageable).stream()
                 .map(ItemMapper::toItemDto).collect(Collectors.toList());
-    }
-
-    private Pageable getPageable(int from, int size) {
-        if (from < 0) {
-            throw new ValidationException("Введен отрицательный индекс первого элемента");
-        }
-        if (size <= 0) {
-            throw new ValidationException("Количество элементов для отображения не может быть меньше или равно нулю");
-        }
-        return PageRequest.of(from / size, size);
     }
 
     @Override

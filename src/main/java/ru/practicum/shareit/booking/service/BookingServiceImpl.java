@@ -1,7 +1,6 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -20,6 +19,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.JpaItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.JpaUserRepository;
+import ru.practicum.shareit.utility.PageUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,7 +71,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingResponseDto> findAllBookingByUserIdAndState(Long userId, String state, int from, int size) {
         validateIfUserNotExist(userId);
-        Pageable pageable = getPageable(from, size);
+        Pageable pageable = PageUtils.getPageable(from, size, Sort.by(Sort.Direction.DESC, "start"));
         switch (BookingState.valueOf(state)) {
             case ALL:
                 return BookingMapper.toBookingResponseDtoList(
@@ -110,7 +110,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingResponseDto> findAllBookingByOwnerIdAndState(Long ownerId, String state, int from, int size) {
         validateIfUserNotExist(ownerId);
-        Pageable pageable = getPageable(from, size);
+        Pageable pageable = PageUtils.getPageable(from, size, Sort.by(Sort.Direction.DESC, "start"));
         if (itemRepository.findAllByOwnerId(ownerId).isEmpty()) {
             throw new DataNotFoundException("У владельца нет ни одной вещи");
         }
@@ -147,16 +147,6 @@ public class BookingServiceImpl implements BookingService {
                 throw new IllegalArgumentException("Неверный статус");
 
         }
-    }
-
-    private Pageable getPageable(int from, int size) {
-        if (from < 0) {
-            throw new ValidationException("Введен отрицательный индекс первого элемента");
-        }
-        if (size <= 0) {
-            throw new ValidationException("Количество элементов для отображения не может быть меньше или равно нулю");
-        }
-        return PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "start"));
     }
 
     private User validateIfUserNotExist(Long userId) {
