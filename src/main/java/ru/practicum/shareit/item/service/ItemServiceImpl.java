@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Booking;
@@ -19,8 +20,11 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.JpaCommentRepository;
 import ru.practicum.shareit.item.repository.JpaItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.JpaItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserValidator;
+import ru.practicum.shareit.user.repository.JpaUserRepository;
+import ru.practicum.shareit.utility.PageUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,24 +41,31 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
 
     private final JpaItemRepository itemRepository;
-    private final UserValidator userValidator;
+    private final JpaUserRepository userRepository;
     private final JpaBookingRepository bookingRepository;
     private final JpaCommentRepository commentRepository;
+    private final JpaItemRequestRepository requestRepository;
+
 
     @Override
     @Transactional
     public ItemDto add(Long userId, ItemDto itemDto) {
-        User user = userValidator.validateIfNotExist(userId);
+        User user = validateIfUserNotExist(userId);
         Item item = ItemMapper.toItem(itemDto);
         validateAddItem(item);
         item.setOwner(user);
+        Long requestId = itemDto.getRequestId();
+        if (requestId != null) {
+            ItemRequest request = validateIfItemRequestNotExist(requestId);
+            item.setRequest(request);
+        }
         return ItemMapper.toItemDto(itemRepository.save(item));
     }
 
     @Override
     @Transactional
     public ItemDto update(Long userId, Long itemId, ItemDto itemDto) {
-        userValidator.validateIfNotExist(userId);
+        validateIfUserNotExist(userId);
         Item item = ItemMapper.toItem(itemDto);
         validateUpdateItem(userId, itemId, item);
         Item savedItem = itemRepository.findById(itemId).get();
@@ -83,9 +94,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemWithBookingDto> getAllItems(Long userId) {
-        userValidator.validateIfNotExist(userId);
-        List<Item> items = itemRepository.findAllByOwnerId(userId);
+    public List<ItemWithBookingDto> getAllItems(Long userId, int from, int size) {
+        validateIfUserNotExist(userId);
+        Pageable pageable = PageUtils.getPageable(from, size);
+        List<Item> items = itemRepository.findAllByOwnerId(userId, pageable);
         if (items.isEmpty()) {
             throw new DataNotFoundException("Пользователь не является владельцем");
         }
@@ -93,11 +105,13 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<ItemDto> searchItems(Long userId, String text) {
+    public List<ItemDto> searchItems(Long userId, String text, int from, int size) {
         if (text.isBlank()) {
             return new ArrayList<>();
         }
-        return itemRepository.searchItems(text).stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
+        Pageable pageable = PageUtils.getPageable(from, size);
+        return itemRepository.searchItems(text, pageable).stream()
+                .map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
 
     @Override
@@ -142,6 +156,15 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
+    private User validateIfUserNotExist(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            log.warn("Пользователь с id={} не существует", userId);
+            throw new DataNotFoundException("Пользователь с указанным id=" + userId + " не был добавлен ранее");
+        }
+        return user.get();
+    }
+
     private Item validateIfNotExist(Long itemId) {
         Optional<Item> savedItem = itemRepository.findById(itemId);
         if (savedItem.isEmpty()) {
@@ -149,6 +172,11 @@ public class ItemServiceImpl implements ItemService {
             throw new DataNotFoundException("Вещь с указанным id=" + itemId + " не была добавлена ранее");
         }
         return savedItem.get();
+    }
+
+    private ItemRequest validateIfItemRequestNotExist(Long requestId) {
+        return requestRepository.findById(requestId)
+                .orElseThrow(() -> new DataNotFoundException("Запрос не найден"));
     }
 
     private List<ItemWithBookingDto> getItemWithBookingDtos(List<Item> items) {
