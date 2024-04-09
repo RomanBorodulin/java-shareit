@@ -3,14 +3,16 @@ package ru.practicum.shareit.item;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.client.BaseClient;
 import ru.practicum.shareit.item.dto.CommentRequestDto;
+import ru.practicum.shareit.item.dto.CommentResponseDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithBookingDto;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -28,36 +30,36 @@ public class ItemClient extends BaseClient {
         );
     }
 
-    public ResponseEntity<Object> add(Long userId, ItemDto itemDto) {
-        return post("", userId, itemDto);
+    public ItemDto add(Long userId, ItemDto itemDto) {
+        return post("", userId, itemDto, ItemDto.class);
     }
 
-    public ResponseEntity<Object> update(Long userId, Long id, ItemDto itemDto) {
-        return patch("/" + id, userId, itemDto);
+    public ItemDto update(Long userId, Long id, ItemDto itemDto) {
+        return patch("/" + id, userId, itemDto, ItemDto.class);
     }
 
-    public ResponseEntity<Object> findById(Long userId, Long id) {
-        return get("/" + id, userId);
+    public ItemWithBookingDto findById(Long userId, Long id) {
+        return get("/" + id, userId, ItemWithBookingDto.class);
     }
 
-    public ResponseEntity<Object> findAllItems(Long userId, int from, int size) {
+    public List<ItemWithBookingDto> findAllItems(Long userId, int from, int size) {
         Map<String, Object> parameters = Map.of(
                 "from", from,
                 "size", size
         );
-        return get("?from={from}&size={size}", userId, parameters);
+        return get("?from={from}&size={size}", userId, parameters, List.class);
     }
 
-    public ResponseEntity<Object> searchItems(Long userId, String text, int from, int size) {
+    public List<ItemDto> searchItems(Long userId, String text, int from, int size) {
         Map<String, Object> parameters = Map.of(
                 "text", text,
                 "from", from,
                 "size", size
         );
-        return get("/search?text={text}&from={from}&size={size}", userId, parameters);
+        return get("/search?text={text}&from={from}&size={size}", userId, parameters, List.class);
     }
 
-    public ResponseEntity<Object> addComment(long userId, CommentRequestDto commentDto, long itemId) {
-        return post("/" + itemId + "/comment", userId, commentDto);
+    public CommentResponseDto addComment(long userId, CommentRequestDto commentDto, long itemId) {
+        return post("/" + itemId + "/comment", userId, commentDto, CommentResponseDto.class);
     }
 }

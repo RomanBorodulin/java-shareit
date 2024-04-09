@@ -1,7 +1,6 @@
 package ru.practicum.shareit.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +14,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Validated
 @RestController
@@ -24,28 +24,28 @@ public class UserController {
     private final UserClient userClient;
 
     @PostMapping
-    public ResponseEntity<Object> add(@NotNull @Valid @RequestBody UserDto userDto) {
+    public UserDto add(@NotNull @Valid @RequestBody UserDto userDto) {
         return userClient.add(userDto);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Object> update(@PathVariable Long id, @NotNull @RequestBody UserDto userDto) {
+    public UserDto update(@PathVariable Long id, @NotNull @RequestBody UserDto userDto) {
         return userClient.update(id, userDto);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> findById(@PathVariable Long id) {
+    public UserDto findById(@PathVariable Long id) {
         return userClient.findById(id);
     }
 
     @GetMapping
-    public ResponseEntity<Object> findAll() {
+    public List<UserDto> findAll() {
         return userClient.findAll();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> delete(@PathVariable Long id) {
-        return userClient.delete(id);
+    public void delete(@PathVariable Long id) {
+        userClient.delete(id);
     }
 
 

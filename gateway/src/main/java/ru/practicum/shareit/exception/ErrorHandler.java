@@ -2,11 +2,13 @@ package ru.practicum.shareit.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpStatusCodeException;
 
 import javax.validation.ConstraintViolationException;
 
@@ -23,7 +25,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+    public ErrorResponse handleBadRequest(MethodArgumentNotValidException e) {
         log.info(e.getMessage(), e);
         return new ErrorResponse(e.getMessage());
     }
@@ -43,10 +45,17 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    public ResponseEntity<String> handleHttpStatusCodeException(HttpStatusCodeException e) {
+        log.info(e.getResponseBodyAsString());
+        return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleThrowable(final Throwable e) {
         log.info(e.getMessage(), e);
         e.printStackTrace();
         return new ErrorResponse("Произошла непредвиденная ошибка.");
     }
+
 }

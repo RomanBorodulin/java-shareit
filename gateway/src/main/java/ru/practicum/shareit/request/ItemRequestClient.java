@@ -3,13 +3,13 @@ package ru.practicum.shareit.request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.shareit.client.BaseClient;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -26,23 +26,23 @@ public class ItemRequestClient extends BaseClient {
         );
     }
 
-    public ResponseEntity<Object> add(Long userId, ItemRequestDto requestDto) {
-        return post("", userId, requestDto);
+    public ItemRequestDto add(Long userId, ItemRequestDto requestDto) {
+        return post("", userId, requestDto, ItemRequestDto.class);
     }
 
-    public ResponseEntity<Object> findAllByUserId(Long userId) {
-        return get("", userId);
+    public List<ItemRequestDto> findAllByUserId(Long userId) {
+        return get("", userId, List.class);
     }
 
-    public ResponseEntity<Object> findAll(Long userId, int from, int size) {
+    public List<ItemRequestDto> findAll(Long userId, int from, int size) {
         Map<String, Object> parameters = Map.of(
                 "from", from,
                 "size", size
         );
-        return get("/all", userId, parameters);
+        return get("/all", userId, parameters, List.class);
     }
 
-    public ResponseEntity<Object> findById(Long userId, Long id) {
-        return get("/" + id, userId);
+    public ItemRequestDto findById(Long userId, Long id) {
+        return get("/" + id, userId, ItemRequestDto.class);
     }
 }
